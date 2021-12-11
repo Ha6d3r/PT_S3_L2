@@ -1,5 +1,4 @@
 #include "task2.h"
-#include <iostream>
 
 // this is even more useless
 Task2::Task2() {

@@ -5,7 +5,15 @@ CONFIG -= qt
 
 SOURCES += \
         main.cpp \
-        task2.cpp
+        menu.cpp \
+        task2.cpp \
+        timeandthings.cpp \
+        train.cpp \
+        traincontainer.cpp
 
 HEADERS += \
-    task2.h
+    menu.h \
+    task2.h \
+    timeandthings.h \
+    train.h \
+    traincontainer.h
