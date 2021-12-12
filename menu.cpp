@@ -31,7 +31,8 @@ search menu::parse_search(std::string s) {
 
                     if (pos!=0 && pos-i > 2) {
                         s_struct.valid = true;
-                        s_struct.name = s.substr(i+2,pos-i-1);
+                        s_struct.name = s.substr(i+2,pos-i-2);
+                        i = pos;
                     }
                 }
             }
@@ -88,6 +89,8 @@ search menu::parse_search(std::string s) {
                             s_struct.eq_B      = false;
                         }
 
+                        if (s_struct.eq_A || s_struct.eq_B || s_struct.greater_A || s_struct.less_A || s_struct.greater_B || s_struct.less_B) s_struct.valid = true;
+
                         one_is_invalid = true;
                         try {
                             s_struct.A = std::stoi(range.substr(1),&nextchar);
@@ -97,7 +100,7 @@ search menu::parse_search(std::string s) {
                         }
 
                         try {
-                            s_struct.B = std::stoi(range.substr(nextchar+1));
+                            s_struct.B = std::stoi(range.substr(nextchar+2));
                             one_is_invalid = false;
                         } catch (std::invalid_argument) {
                             one_is_invalid = true;
@@ -105,6 +108,7 @@ search menu::parse_search(std::string s) {
                         }
 
                         if (one_is_invalid) s_struct.valid = false;
+                        i = pos;
 
                     }
 
@@ -119,14 +123,17 @@ search menu::parse_search(std::string s) {
 
 bool menu::search_to_bool(search s, int data, std::string str) {
     return (s.name == str || !s.use_name) && (
-            !s.use_range || (   (data == s.A && s.eq_A) ||
-                                (data == s.B && s.eq_B) ||
-                                (data <  s.A && s.less_A) ||
-                                (data <  s.B && s.less_B) ||
-                                (data >  s.A && s.greater_A) ||
-                                (data >  s.B && s.greater_B)
-                                )
-            );
+            !s.use_range ||
+            (   (data == s.A && s.eq_A) ||
+                (data == s.B && s.eq_B) ||
+
+                (data <  s.A && s.less_A) ||
+                (data >  s.B && s.greater_B) ||
+                (data > s.A && data < s.B && s.greater_A && s.less_B) ||
+                (data >  s.A && s.greater_A && !s.less_B) ||
+                (data <  s.B && s.less_B && !s.greater_A)
+            )
+    );
 }
 
 void menu::show() {
@@ -136,6 +143,10 @@ void menu::show() {
     std::string command;
     std::size_t next_char;
     int command_num;
+
+    std::string dest;
+    int id;
+    int dep;
 
     std::string path;
 
@@ -156,7 +167,7 @@ void menu::show() {
 
         switch (getch()) {
             case 77: {
-                if (pos!=6) pos++;
+                if (pos!=names_count-1) pos++;
                 break;
             }
             case 75: {
@@ -206,12 +217,14 @@ void menu::show() {
                         if (s == 0) {
                             std::cout << "Empty";
                         } else {
+                            id = 0;
                             for (unsigned int i = 0; i < s; ++i) {
                                 tmp = container->get(i);
 
                                 if (command_num > 0) {
                                     if (tmp->get_departure() < command_num) continue;
                                 }
+                                id++;
 
                                 if (command_num < 0) {
                                     if (!search_to_bool(search_params, tmp->get_id(), tmp->get_destination())) continue;
@@ -223,9 +236,86 @@ void menu::show() {
                                 std::cout << seconds_to_str(tmp->get_departure()) << '\n';
                                 std::cout << "---------------" << std::endl;
                             }
+                            if (id == 0) {
+                                std::cout << "Empty";
+                            }
                         }
 
                         while(getch() != 72);
+                        break;
+                    }
+
+                    case 1: {
+
+                        command = "";
+
+                        std::cout << "\033[30m\033[47m DESTINATION \033[0m -> ";
+                        std::cin >> command;
+
+                        while (command.empty()) {
+                            std::cout << "\033[30m\033[47m DESTINATION \033[0m -> ";
+                            std::cin >> command;
+                            std::cout << "\n";
+                        }
+
+                        dest = command;
+
+                        command_num = -1;
+                        while (command_num <= 0) {
+                            std::cout << "\033[30m\033[47m ID \033[0m -> ";
+                            std::cin >> command;
+                            try {
+                                command_num = std::stoi(command);
+                            }  catch (std::invalid_argument) {
+                                std::cout << "\033[31mInvalid argument\033[0m";
+                            }
+                        }
+
+                        id = command_num;
+
+                        command_num = -1;
+                        while (command_num <= 0) {
+                            std::cout << "\033[30m\033[47m DEPARTION \033[0m -> ";
+                            std::cin >> command;
+                            try {
+                                command_num = str_to_seconds(command);
+                            }  catch (std::invalid_argument) {
+                                std::cout << "\033[31mInvalid argument\033[0m\n";
+                            }
+                        }
+
+                        dep = command_num;
+
+                        container->add(Train(dest,id,dep));
+
+                        while(getch() != 72);
+                        break;
+                    }
+
+                    case 2: {
+
+                        command = "";
+
+                        std::cout << "\033[30m\033[47m FILE PATH \033[0m (this directory or ABS with type) -> ";
+                        std::cin >> command;
+
+                        std::ifstream file(command);
+
+                        while (!file.is_open()) {
+                            std::cout << "\033[30m\033[47m FILE PATH \033[0m (this directory or ABS with type) -> ";
+                            std::cin >> command;
+                            file.open(command);
+                        }
+
+                        std::cout << task->answer(file) << std::endl;
+                        file.close();
+
+                        while(getch() != 72);
+                        break;
+                    }
+
+                    case 3: {
+                        run = false;
                         break;
                     }
                 }

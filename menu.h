@@ -4,6 +4,7 @@
 #include <task2.h>
 #include <traincontainer.h>
 #include <iostream>
+#include <fstream>
 #include <conio.h>
 
 typedef struct search {
@@ -44,15 +45,14 @@ class menu {
         Task2 * task;
         TrainContainer * container;
 
-        std::string names[5] = {
+        std::string names[4] = {
             "Display",
             "Add",
-            "Get",
             "Task2",
             "Exit"
         };
 
-        int names_count = 5;
+        int names_count = 4;
 };
 
 #endif // MENU_H
